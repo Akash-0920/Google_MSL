@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MSL Field Tracker</title>
+<style>
+:root{box-sizing:border-box;--bg:#f6f7f9;--card:#fff;--tx:#1a1d21;--mu:#6b7280;--bd:#e2e5ea;--ac:#0f766e;--ac2:#fff;--dg:#b91c1c;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1b1f25;--tx:#e8eaed;--mu:#9aa3af;--bd:#2d333b;--ac:#2dd4bf;--ac2:#06201d;--dg:#f87171}}
+:root[data-theme="dark"]{--bg:#111418;--card:#1b1f25;--tx:#e8eaed;--mu:#9aa3af;--bd:#2d333b;--ac:#2dd4bf;--ac2:#06201d;--dg:#f87171}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:12px}
+h1{font-size:19px;margin:6px 0 10px}h3{margin:14px 0 6px}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
+nav button{flex:1;white-space:nowrap}
+button,.btn{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+button.on,.p{background:var(--ac);color:var(--ac2);border-color:var(--ac)}
+button.d{color:var(--dg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px}
+.warn{border-color:var(--dg)}
+form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+form .w{grid-column:1/-1}
+input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+label{font-size:12px;color:var(--mu)}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.mu{color:var(--mu);font-size:13px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.acts>*{padding:5px 10px;font-size:13px}
+.acts select{width:auto}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat{text-align:center}.stat b{font-size:22px;display:block}
+.sc{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{text-align:left;padding:6px;border-bottom:1px solid var(--bd)}
+.over{color:var(--dg);font-weight:600}
+.bd{padding:2px 8px;border-radius:99px;font-size:12px;border:1px solid var(--bd);white-space:nowrap}.bd.ok{background:var(--ac);color:var(--ac2);border-color:var(--ac)}.bd.mid{border-color:var(--ac);color:var(--ac)}
+.bar{height:8px;border-radius:8px;background:var(--bd);overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--ac)}
+details summary{cursor:pointer}
+.note{border-left:3px solid var(--ac);padding:2px 8px;margin:6px 0;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>MSL Field Tracker</h1>
+<nav id="nav"></nav>
+<div id="v"></div>
+<p class="mu">No patient data. Auto-saved in this browser with backup copies. Export regularly.</p>
+</main>
+<script>
+var KEY="msl_tracker_v1",KEY2="msl_tracker_v1_copy",SNAP="msl_tracker_v1_snaps";
+var S={docs:[],visits:[],exports:[]},tab="today",openNote="",preDoc="",per="week",ex={f:"",t:""},rec=null;
+function fix(){S.docs=S.docs||[];S.visits=S.visits||[];S.exports=S.exports||[]}
+function ld(k){try{var r=localStorage.getItem(k);return r?JSON.parse(r):null}catch(e){return null}}
+(function(){var o=ld(KEY)||ld(KEY2);if(!o){var sn=ld(SNAP);if(sn&&sn.length)o=sn[sn.length-1].d}if(o)S=o;fix();
+ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}})();
+var SEED="Manish Jain|N;A K Bhalla|N;D K Agarwal|N;Manish Malik|N;RK Sharma|N;Amit Gupta|N;KK Tripathi|N;Vipul Gupta|I;Singh A P|I;Rajeev Chawla|I;Anoop Misra|I;Hanish Gupta|I;Vikas Bhutani|I;CG Agarwal|I;Nandini Rastogi|I;Sanjay Kalra|E;S K Wangnoo|E;Sachin Mittal|E;Ambrish Mithal|E;AH Zargar|E;Rishi Shukla|E;Neeru Gera|I;Beena Bansal|I;Gagan Priya|E;Surender Kumar|E;Rajesh Rajput (verify)|E;J. Ahmed (verify)|E;Sanjay Gupta|I;Hemi Soneja|I;Meena Chhabra|I;Varesh Nagrath|I;Surya Kant Mathur|E;Ramanbir Singh|E;Vipan Talwar|E;Aloke Kumar Gupta|I;Rakesh Goyal|E;Rajiv Awasthi|I;Sushil Gupta|E;Jasjit Wazir|I;Akshata Desai|E;Ajoy Tewari|I;Deep Dutta|E;JK Sharma|I;Deepak Khandelwal|E;Saptarishi Bhattacharya|E;Shafi Kuchay|E;CM Batra|E;Susheel Shalimar|H;Shiv Sarin|H;Tarana Gupta|H;Ajay Duseja|H;Prashant Katiyar|H;VK Chopra|C;JPS Sawhney|C;Viveka Kumar|C;Ashwani Mehta|C;Aparna Jaswal|C;Samir Kubba|C;Peeyush Jain|C;S. Mittal (verify)|C";
+function seed(){if(S.seeded)return;var K={N:"Nephrology",I:"Internal Medicine",E:"Endocrinology",H:"Hepatology",C:"Cardiology"},have={};S.docs.forEach(function(d){have[String(d.name).toLowerCase()]=1});SEED.split(";").forEach(function(x,i){var q=x.split("|");if(!have[q[0].toLowerCase()])S.docs.push({id:"s"+(i+1),name:q[0],spec:K[q[1]],hosp:"",addr:"",ph:"",sr:i+1})});S.seeded=1;keepMod=true;save(true);keepMod=false}
+var keepMod=false,syncing=false,syncMsg="",stT=null,TK="msl_sync_token",GID="msl_sync_gist",SYN="msl_synced";
+function lsg(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lss(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
+function sst(t){syncMsg=t;var m=document.getElementById("sst");if(m)m.textContent=t}
+function sched(){if(!mode())return;clearTimeout(stT);stT=setTimeout(function(){sync(false)},2500)}
+var SU="msl_sheet_url",SK="msl_sheet_key";
+function mode(){return(lsg(SU)&&lsg(SK))?"sheet":(lsg(TK)?"gist":"")}
+async function gh(path,o){o=o||{};o.headers={"Authorization":"Bearer "+lsg(TK),"Accept":"application/vnd.github+json","Content-Type":"application/json"};var r=await fetch("https://api.github.com"+path,o);if(!r.ok)throw new Error(r.status==401?"Bad token":"Error "+r.status);return r.json()}
+async function pullR(){
+ if(mode()=="sheet"){var r=await fetch(lsg(SU)+(lsg(SU).indexOf("?")<0?"?":"&")+"key="+encodeURIComponent(lsg(SK)));var j=await r.json();if(j.error)throw new Error(j.error);return j.data||null}
+ var id=lsg(GID);
+ if(!id){var l=await gh("/gists?per_page=100"),g0=l.filter(function(x){return x.description=="msl-tracker-data"})[0];if(g0){id=g0.id;lss(GID,id)}}
+ if(!id)return null;
+ var g=await gh("/gists/"+id),f=g.files&&g.files["msl.json"];if(!f)return null;
+ var tx=f.truncated?await(await fetch(f.raw_url)).text():f.content;return JSON.parse(tx)}
+async function pushR(){
+ if(mode()=="sheet"){var r=await fetch(lsg(SU),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:lsg(SK),action:"set",data:S})});var j=await r.json();if(j.error)throw new Error(j.error);return}
+ var body=JSON.stringify({description:"msl-tracker-data",public:false,files:{"msl.json":{content:JSON.stringify(S)}}}),id=lsg(GID);
+ if(id)await gh("/gists/"+id,{method:"PATCH",body:body});else{var c=await gh("/gists",{method:"POST",body:body});lss(GID,c.id)}}
+async function sync(manual){if(!mode()||syncing)return;syncing=true;sst("Syncing…");
+ try{var remote=await pullR(),first=!lsg(SYN),rm=remote?(remote.mod||0):-1,lm=S.mod||0,useCloud=false;
+  if(remote&&first)useCloud=!S.visits.length||confirm("Saved cloud data found. OK = replace this device with cloud data. Cancel = overwrite cloud with this device's data.");
+  var pull=!!remote&&(first?useCloud:rm>lm),push=!pull&&(!remote||lm>rm||(first&&!useCloud)),tm=new Date().toLocaleTimeString();
+  if(pull){snap(true);S=remote;fix();keepMod=true;save();keepMod=false;render();sst("Pulled latest at "+tm)}
+  else if(push){await pushR();sst("Saved to cloud at "+tm)}
+  else sst("Up to date ("+tm+")");
+  lss(SYN,"1")}
+ catch(e){sst("Sync failed: "+(e.message||e))}
+ syncing=false}
+function syncCard(){var m=mode();
+ if(m)return '<div class="card"><b>Cloud sync</b><div class="mu">Connected via '+(m=="sheet"?"Google Sheet":"GitHub Gist")+'. Syncs when you open the app and after each change.</div><div class="acts"><button class="p" data-sy="1">Sync now</button><button class="d" data-so="1">Disconnect</button></div><span class="mu" id="sst">'+esc(syncMsg)+'</span></div>';
+ return '<div class="card"><b>Cloud sync (all devices)</b><details open><summary>Option A: Google Sheet</summary><p class="mu">Deploy the Code.gs script from your Google Sheet, then paste its Web app URL and your key. Use the same on every device.</p><input id="shu" placeholder="https://script.google.com/macros/s/.../exec"><input id="shk" type="password" placeholder="Your secret key" style="margin-top:6px"><div class="acts"><button class="p" data-sh="1">Connect Sheet</button></div></details><details><summary>Option B: GitHub Gist</summary><p class="mu">Classic token with only the gist scope.</p><input type="password" id="tk" placeholder="ghp_..."><div class="acts"><button class="p" data-tk="1">Connect Gist</button></div></details><span class="mu" id="sst"></span><p class="mu">Keep patient data out. The key/token stays in this browser only.</p></div>'}
+function snap(force){try{var sn=ld(SNAP)||[],l=sn[sn.length-1];if(force||!l||Date.now()-l.t>600000){sn.push({t:Date.now(),d:S});sn=sn.slice(-5);localStorage.setItem(SNAP,JSON.stringify(sn))}}catch(e){}}
+function save(force){try{if(!keepMod)S.mod=Date.now();var j=JSON.stringify(S);localStorage.setItem(KEY,j);localStorage.setItem(KEY2,j)}catch(e){}snap(force);if(!keepMod)sched()}
+function $(s){return document.querySelector(s)}
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function p2(n){return String(n).padStart(2,"0")}
+function ds(d){return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
+function today(){return ds(new Date())}
+function ts(){var d=new Date();return ds(d)+" "+p2(d.getHours())+":"+p2(d.getMinutes())}
+function dr(id){return S.docs.find(function(x){return x.id==id})}
+function dn(id){var d=dr(id);return d?d.name:"(deleted)"}
+function mapUrl(d){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([d.name,d.hosp,d.addr].filter(Boolean).join(" "))}
+function rangeFor(k){var n=new Date(),y=n.getFullYear(),m=n.getMonth(),a,b=n;
+ if(k=="week"){a=new Date(n);a.setDate(n.getDate()-((n.getDay()+6)%7))}
+ else if(k=="month")a=new Date(y,m,1);
+ else if(k=="lastmonth"){a=new Date(y,m-1,1);b=new Date(y,m,0)}
+ else if(k=="quarter")a=new Date(y,Math.floor(m/3)*3,1);
+ else if(k=="lastquarter"){var q=Math.floor(m/3)*3;a=new Date(y,q-3,1);b=new Date(y,q,0)}
+ else if(k=="last30"){a=new Date(n);a.setDate(n.getDate()-30)}
+ else a=new Date(2000,0,1);
+ return[ds(a),ds(b)]}
+var TABS=[["today","Today"],["docs","Doctors"],["cov","Coverage"],["log","Log visit"],["sum","Summary"],["ex","Export"]];
+function nav(){$("#nav").innerHTML=TABS.map(function(t){return '<button class="'+(tab==t[0]?"on":"")+'" data-t="'+t[0]+'">'+t[1]+"</button>"}).join("")}
+function render(){if(rec){try{rec.stop()}catch(e){}}nav();$("#v").innerHTML={today:vToday,docs:vDocs,cov:vCov,log:vLog,sum:vSum,ex:vEx}[tab]()}
+
+function micHtml(id){return '<div class="acts"><button type="button" data-mic="'+id+'">🎤 Voice</button><select class="lang"><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option></select><span class="mu mm"></span></div>'}
+function toggleMic(btn){var ta=document.getElementById(btn.getAttribute("data-mic")),mm=btn.parentNode.querySelector(".mm"),SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(rec){rec.stop();return}
+ if(!SR){mm.textContent="Voice not supported here. Use your keyboard mic key.";return}
+ rec=new SR();rec.lang=btn.parentNode.querySelector(".lang").value;rec.continuous=true;rec.interimResults=false;
+ btn.classList.add("on");btn.textContent="⏹ Stop";mm.textContent="Listening…";
+ rec.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal){ta.value+=(ta.value&&!/\s$/.test(ta.value)?" ":"")+e.results[i][0].transcript.trim()}};
+ rec.onerror=function(e){mm.textContent=(e.error=="not-allowed"||e.error=="service-not-allowed")?"Mic blocked. Allow microphone in browser settings, or use keyboard mic.":"Voice error: "+e.error};
+ rec.onend=function(){rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice";if(mm.textContent=="Listening…")mm.textContent=""};
+ try{rec.start()}catch(x){rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice"}}
+
+function isDone(v){return v.st!="planned"}
+function tgt(){return S.target||2}
+function qCount(id){var r=rangeFor("quarter");return S.visits.filter(function(v){return v.doc==id&&isDone(v)&&v.date>=r[0]&&v.date<=r[1]}).length}
+function qLeft(){var n=new Date(),e=new Date(n.getFullYear(),Math.floor(n.getMonth()/3)*3+3,0);return Math.ceil((e-new Date(today()))/86400000)}
+function badge(id){var c=qCount(id),t=tgt(),ok=c>=t;return '<span class="bd'+(ok?" ok":c?" mid":"")+'">'+c+'/'+t+' this qtr'+(ok?' ✓':'')+'</span>'}
+function covBox(){var t=tgt(),n=S.docs.length;if(!n)return "";var m=0,p=0,z=0,v=0;S.docs.forEach(function(d){var c=qCount(d.id);v+=Math.min(c,t);if(c>=t)m++;else if(c>0)p++;else z++});var need=n*t;
+ return '<div class="card"><div class="row"><b>This quarter</b><span class="mu">'+qLeft()+' days left</span></div><div class="bar"><i style="width:'+Math.round(v/need*100)+'%"></i></div><div class="mu">'+m+' of '+n+' doctors at '+t+'/'+t+' · '+p+' started · '+z+' not visited · '+(need-v)+' visits remaining</div></div>'}
+function planHtml(){var pl=S.visits.filter(function(v){return !isDone(v)}).sort(function(a,b){return a.date<b.date?-1:1});return pl.map(vCard).join("")||'<p class="mu">No planned meetings.</p>'}
+function covCsv(r){var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};return "\ufeff"+["No,Doctor,Speciality,Hospital,Completed visits,Target,Target met"].concat(S.docs.slice().sort(function(a,b){return (a.sr||999)-(b.sr||999)}).map(function(d){var c=S.visits.filter(function(v){return v.doc==d.id&&isDone(v)&&v.date>=r[0]&&v.date<=r[1]}).length;return[d.sr,d.name,d.spec,d.hosp,c,tgt(),c>=tgt()?"Yes":"No"].map(q).join(",")})).join("\r\n")}
+function vCard(v){var nl=(v.nl||[]).map(function(n){return '<div class="note"><span class="mu">'+esc(n.t)+'</span> '+esc(n.x)+'</div>'}).join("");
+ return '<div class="card"><div class="row"><b>'+esc(dn(v.doc))+'</b><span class="mu">'+(isDone(v)?"":"📅 Planned · ")+esc(v.date)+'</span></div><div>'+esc(v.topic)+' <span class="mu">· '+esc(v.out)+(v.created?' · logged '+esc(v.created):"")+'</span></div>'+(v.notes?'<div class="note">'+esc(v.notes)+'</div>':"")+nl+
+ (openNote==v.id?'<textarea id="nt" rows="3" placeholder="Post-meeting note (no patient data)"></textarea>'+micHtml("nt")+'<div class="acts"><button class="p" data-sn="'+v.id+'">Save note</button><button data-an="">Cancel</button></div>':'<div class="acts">'+(isDone(v)?"":'<button class="p" data-cmp="'+v.id+'">Mark complete</button>')+'<button data-an="'+v.id+'">+ Add note</button><button class="d" data-delv="'+v.id+'">Delete</button></div>')+'</div>'}
+
+function lastEx(){return S.exports.length?S.exports[S.exports.length-1].d:""}
+function daysSince(d){return d?Math.floor((new Date(today())-new Date(d))/86400000):9999}
+function vToday(){var t=today(),fu=S.visits.filter(function(v){return v.fu}).sort(function(a,b){return a.fu<b.fu?-1:1}),due=fu.filter(function(v){return v.fu<=t}),up=fu.filter(function(v){return v.fu>t}).slice(0,8);
+ var ds_=daysSince(lastEx()),ban=(S.visits.length&&ds_>=30)?'<div class="card warn"><b>Export due</b><div class="mu">'+(lastEx()?"Last export "+ds_+" days ago.":"No export done yet.")+'</div><div class="acts"><button class="p" data-t="ex">Go to Export</button></div></div>':"";
+ function item(v,o){var d=dr(v.doc);return '<div class="card"><div class="row"><b>'+esc(dn(v.doc))+'</b><span class="'+(o?"over":"mu")+'">'+esc(v.fu)+'</span></div><div class="mu">'+esc(v.topic)+'</div><div class="acts">'+(d?'<a class="btn" target="_blank" rel="noopener" href="'+mapUrl(d)+'">Map</a>':"")+'<button data-done="'+v.id+'">Done</button></div></div>'}
+ var rv=S.visits.filter(isDone).sort(function(a,b){return (a.date+(a.created||""))<(b.date+(b.created||""))?1:-1}).slice(0,3);
+ return ban+covBox()+'<a class="btn p" style="width:100%;text-align:center;margin-bottom:10px" target="_blank" rel="noopener" href="https://www.google.com/maps/search/doctors+clinics+near+me">Find nearest doctors</a><h3>Planned meetings</h3>'+planHtml()+'<h3>Due / overdue ('+due.length+')</h3>'+(due.map(function(v){return item(v,1)}).join("")||'<p class="mu">Nothing due.</p>')+'<h3>Upcoming</h3>'+(up.map(function(v){return item(v,0)}).join("")||'<p class="mu">No follow-ups set.</p>')+'<h3>Recent visits</h3>'+(rv.map(vCard).join("")||'<p class="mu">No visits yet.</p>')}
+
+var fl={s:"",q:"",st:""},openMark="",openEd="";
+function opt(v,c,l){return '<option value="'+esc(v)+'"'+(v==c?" selected":"")+'>'+esc(l)+'</option>'}
+function dCard(d){var last=S.visits.filter(function(v){return v.doc==d.id&&isDone(v)}).map(function(v){return v.date}).sort().pop(),pl=S.visits.filter(function(v){return v.doc==d.id&&!isDone(v)}).length;
+ var h='<div class="card"><div class="row"><b>'+(d.sr?d.sr+'. ':'')+esc(d.name)+'</b>'+badge(d.id)+'</div><div class="mu">'+esc([d.spec,d.hosp,d.addr].filter(Boolean).join(" · "))+'</div><div class="mu">'+(last?"Last visit "+esc(last):"Not visited yet")+(pl?" · "+pl+" planned":"")+'</div><div class="acts"><button class="p" data-mo="'+d.id+'">✓ Mark / plan visit</button><a class="btn" target="_blank" rel="noopener" href="'+mapUrl(d)+'">Map</a>'+(d.ph?'<a class="btn" href="tel:'+esc(d.ph)+'">Call</a>':"")+'<button data-visit="'+d.id+'">Full log</button><button data-ed="'+d.id+'">Edit</button><button class="d" data-deld="'+d.id+'">Delete</button></div>';
+ if(openMark==d.id)h+='<div class="card" style="margin-top:8px"><div class="row"><div style="flex:1"><label>Date</label><input type="date" id="mkd" value="'+today()+'"></div><div style="flex:2"><label>Topic</label><input id="mkt" placeholder="optional"></div></div><div class="acts"><button class="p" data-mk="done">Save as completed</button><button data-mk="plan">Save as planned</button><button data-mo="">Cancel</button></div></div>';
+ if(openEd==d.id)h+='<form id="fe" class="card" style="margin-top:8px"><input type="hidden" name="eid" value="'+d.id+'"><div><label>Name</label><input name="name" value="'+esc(d.name)+'" required></div><div><label>Speciality</label><input name="spec" value="'+esc(d.spec)+'"></div><div><label>Hospital / clinic</label><input name="hosp" value="'+esc(d.hosp)+'"></div><div><label>Phone</label><input name="ph" type="tel" value="'+esc(d.ph)+'"></div><div class="w"><label>Address / area</label><input name="addr" value="'+esc(d.addr)+'"></div><div class="w acts"><button class="p">Save</button><button type="button" data-ed="">Cancel</button></div></form>';
+ return h+'</div>'}
+function vDocs(){var specs=[];S.docs.forEach(function(d){if(d.spec&&specs.indexOf(d.spec)<0)specs.push(d.spec)});
+ var L=S.docs.filter(function(d){var c=qCount(d.id);return(!fl.s||d.spec==fl.s)&&(!fl.q||(d.name+" "+(d.hosp||"")+" "+(d.addr||"")).toLowerCase().indexOf(fl.q.toLowerCase())>=0)&&(!fl.st||(fl.st=="done"?c>=tgt():c<tgt()))}).sort(function(a,b){return(a.sr||999)-(b.sr||999)});
+ return '<div class="card"><div class="row"><div style="flex:1;min-width:130px"><label>Search</label><input id="fq" value="'+esc(fl.q)+'" placeholder="name / hospital"></div><div style="flex:1;min-width:120px"><label>Speciality</label><select id="fs">'+opt("",fl.s,"All")+specs.map(function(x){return opt(x,fl.s,x)}).join("")+'</select></div><div style="flex:1;min-width:120px"><label>Status</label><select id="fst">'+opt("",fl.st,"All")+opt("pend",fl.st,"Pending")+opt("done",fl.st,"Target met")+'</select></div></div><p class="mu">'+L.length+' of '+S.docs.length+' doctors</p></div>'+
+ L.map(dCard).join("")+
+ '<details class="card"><summary><b>Add doctor</b></summary><form id="fd" style="margin-top:8px"><div><label>Name</label><input name="name" required></div><div><label>Speciality</label><input name="spec"></div><div><label>Hospital / clinic</label><input name="hosp"></div><div><label>Phone</label><input name="ph" type="tel"></div><div class="w"><label>Address / area</label><input name="addr"></div><div class="w"><button class="p">Save doctor</button></div></form><div style="margin-top:10px"><label>Bulk import: one doctor per line, "Name, Speciality"</label><textarea id="bi" rows="5"></textarea><div class="acts"><button data-bi="1">Import list</button><span class="mu" id="bim"></span></div></div></details>'}
+function vCov(){var t=tgt(),r=rangeFor("quarter"),by={};S.docs.forEach(function(d){var k=d.spec||"Other",c=qCount(d.id),o=by[k]=by[k]||{n:0,m:0,rem:0};o.n++;if(c>=t)o.m++;o.rem+=Math.max(0,t-c)});
+ var rows=Object.keys(by).map(function(k){var o=by[k];return '<tr><td>'+esc(k)+'</td><td>'+o.m+'/'+o.n+'</td><td>'+o.rem+'</td></tr>'}).join("");
+ var pend=S.docs.filter(function(d){return qCount(d.id)<t}).sort(function(a,b){return qCount(a.id)-qCount(b.id)||(a.sr||999)-(b.sr||999)});
+ return covBox()+'<div class="card"><label>Target visits per doctor per quarter</label><input type="number" id="tg" min="1" max="12" value="'+t+'" style="width:90px"><p class="mu">Quarter starts '+r[0]+'. Only completed visits count.</p></div><div class="card"><b>By speciality</b><div class="sc"><table><tr><th>Speciality</th><th>Target met</th><th>Visits left</th></tr>'+rows+'</table></div></div><h3>Still to cover ('+pend.length+')</h3>'+(pend.map(function(d){return '<div class="card"><div class="row"><b>'+esc(d.name)+'</b>'+badge(d.id)+'</div><div class="mu">'+esc(d.spec||"")+'</div><div class="acts"><button class="p" data-go="'+d.id+'">Mark / plan visit</button></div></div>'}).join("")||'<p class="mu">All doctors covered 🎉</p>')}
+
+function vLog(){if(!S.docs.length)return '<p class="mu">Add a doctor first.</p>';
+ return '<form class="card" id="fv"><div><label>Date</label><input type="date" name="date" value="'+today()+'" required></div><div><label>Doctor</label><select name="doc">'+S.docs.map(function(d){return '<option value="'+d.id+'"'+(d.id==preDoc?" selected":"")+'>'+esc(d.name)+'</option>'}).join("")+'</select></div><div><label>Topic</label><input name="topic" placeholder="e.g. new data, MoA"></div><div><label>Status</label><select name="st"><option value="done">Completed</option><option value="planned">Planned</option></select></div><div><label>Outcome</label><select name="out"><option>Positive</option><option>Neutral</option><option>Needs follow-up</option><option>Not met</option></select></div><div class="w"><label>Notes (no patient data)</label><textarea id="nn" name="notes" rows="3"></textarea>'+micHtml("nn")+'</div><div><label>Follow-up date</label><input type="date" name="fu"></div><div style="align-self:end"><button class="p" style="width:100%">Save visit</button></div></form>'+
+ S.visits.slice().sort(function(a,b){return (a.date+(a.created||""))<(b.date+(b.created||""))?1:-1}).slice(0,40).map(vCard).join("")}
+
+function inR(r){return S.visits.filter(function(v){return isDone(v)&&v.date>=r[0]&&v.date<=r[1]})}
+function agg(vs){var bd={},bt={},bdate={};vs.forEach(function(v){var n=dn(v.doc);bd[n]=(bd[n]||0)+1;var t=(v.topic||"-").trim()||"-";bt[t]=(bt[t]||0)+1;bdate[v.date]=(bdate[v.date]||0)+1});return{bd:bd,bt:bt,bdate:bdate,fu:vs.filter(function(v){return v.fu}).length}}
+function sumText(r,label){var vs=inR(r),a=agg(vs),l=["MSL activity summary: "+label+" ("+r[0]+" to "+r[1]+")","Total visits: "+vs.length,"Unique doctors: "+Object.keys(a.bd).length,"Follow-ups set: "+a.fu,"","By doctor:"];
+ Object.keys(a.bd).forEach(function(k){l.push("- "+k+": "+a.bd[k])});l.push("","By topic:");Object.keys(a.bt).forEach(function(k){l.push("- "+k+": "+a.bt[k])});l.push("","By date:");Object.keys(a.bdate).sort().forEach(function(k){l.push("- "+k+": "+a.bdate[k])});return l.join("\n")}
+function tb(o,sort){var k=Object.keys(o);if(sort)k.sort();return k.length?'<div class="sc"><table>'+k.map(function(x){return "<tr><td>"+esc(x)+"</td><td>"+o[x]+"</td></tr>"}).join("")+"</table></div>":'<p class="mu">None.</p>'}
+function vSum(){var r=rangeFor(per),vs=inR(r),a=agg(vs),P=[["week","Week"],["month","Month"],["lastmonth","Last month"],["quarter","Quarter"],["lastquarter","Last qtr"],["all","All"]];
+ return '<nav>'+P.map(function(x){return '<button class="'+(per==x[0]?"on":"")+'" data-per="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</nav><p class="mu">'+r[0]+' to '+r[1]+'</p><div class="stats"><div class="card stat"><b>'+vs.length+'</b><span class="mu">Visits</span></div><div class="card stat"><b>'+Object.keys(a.bd).length+'</b><span class="mu">Doctors</span></div><div class="card stat"><b>'+a.fu+'</b><span class="mu">Follow-ups</span></div></div><div class="card"><b>By date</b>'+tb(a.bdate,1)+'</div><div class="card"><b>By doctor</b>'+tb(a.bd)+'</div><div class="card"><b>By topic</b>'+tb(a.bt)+'</div><button data-copy="sum">Copy summary text</button> <span id="msg" class="mu"></span>'}
+
+function csv(r){var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};
+ return "\ufeff"+["Visit date,Logged at,Doctor,Speciality,Hospital,Topic,Outcome,Notes,Post-meeting notes,Follow-up"].concat(inR(r).sort(function(a,b){return a.date<b.date?-1:1}).map(function(v){var d=dr(v.doc)||{};return[v.date,v.created,d.name||"(deleted)",d.spec,d.hosp,v.topic,v.out,v.notes,(v.nl||[]).map(function(n){return n.t+": "+n.x}).join(" | "),v.fu].map(q).join(",")})).join("\r\n")}
+
+function vEx(){if(!ex.f){var r=rangeFor("month");ex.f=r[0];ex.t=r[1]}
+ var n=inR([ex.f,ex.t]).length,d=daysSince(lastEx()),sn=ld(SNAP)||[],PR=[["month","This month"],["lastmonth","Last month"],["quarter","This quarter"],["lastquarter","Last quarter"],["last30","Last 30 days"],["all","All data"]];
+ return syncCard()+'<div class="card'+(d>=30&&S.visits.length?' warn':'')+'"><b>Export status</b><div class="mu">Last export: '+(lastEx()?esc(lastEx())+" ("+d+" days ago)":"never")+'. Exporting never deletes data.</div></div>'+
+ '<div class="card"><b>Choose period</b><div class="acts">'+PR.map(function(x){return '<button data-pre="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div><div class="row" style="margin-top:8px"><div style="flex:1"><label>From</label><input type="date" id="ef" value="'+ex.f+'"></div><div style="flex:1"><label>To</label><input type="date" id="et" value="'+ex.t+'"></div></div><p class="mu">'+n+' visits in range</p><div class="acts"><button class="p" data-dl="csv">Download CSV (Excel)</button><button data-dl="cov">Coverage CSV</button><button data-dl="txt">Download summary</button><button data-dl="json">Full backup (JSON)</button></div><span id="msg" class="mu"></span></div>'+
+ '<div class="card"><b>Export history</b>'+(S.exports.length?'<div class="sc"><table>'+S.exports.slice().reverse().slice(0,10).map(function(e){return '<tr><td>'+esc(e.d)+'</td><td>'+esc(e.k)+'</td><td>'+esc(e.f)+' → '+esc(e.t)+'</td><td>'+e.n+'</td></tr>'}).join("")+'</table></div>':'<p class="mu">None yet.</p>')+'</div>'+
+ '<div class="card"><b>Restore</b><p class="mu">Load a JSON backup file. Auto snapshots kept: '+sn.length+(sn.length?' (latest '+new Date(sn[sn.length-1].t).toLocaleString()+')':'')+'</p><input type="file" id="rf" accept=".json,application/json"><div class="acts"><button data-snap="1">Restore latest snapshot</button><button class="d" data-wipe="1">Erase all</button></div></div>'}
+
+function msg(t){var m=$("#msg");if(m)m.textContent=t}
+function fname(k,e){return "msl-"+k+"-"+ex.f+"_to_"+ex.t+"."+e}
+async function dl(kind){var r=[ex.f,ex.t],name,data,n=inR(r).length;
+ if(kind=="csv"){name=fname("visits","csv");data=csv(r)}
+ else if(kind=="cov"){name=fname("coverage","csv");data=covCsv(r)}
+ else if(kind=="txt"){name=fname("summary","txt");data=sumText(r,"export")}
+ else{name="msl-backup-"+today()+".json";data=JSON.stringify(S);r=["all","all"];n=S.visits.length}
+ var d=null;try{if(typeof claude!="undefined")d=await claude.use("downloads")}catch(e){}
+ try{if(d){await d.save({filename:name,data:data})}else{var bl=new Blob([data],{type:"text/plain;charset=utf-8"}),u=URL.createObjectURL(bl),an=document.createElement("a");an.href=u;an.download=name;document.body.appendChild(an);an.click();an.remove();setTimeout(function(){URL.revokeObjectURL(u)},1500)}S.exports.push({d:today(),k:kind,f:r[0],t:r[1],n:n});save(true);render();msg("Saved")}catch(e){msg(e&&e.code=="declined"?"Cancelled":"Save failed")}}
+function copy(t){try{navigator.clipboard.writeText(t).then(function(){msg("Copied")},function(){msg("Copy blocked")})}catch(e){msg("Copy blocked")}}
+function restore(o){if(o&&o.docs&&o.visits){snap(true);S=o;fix();save(true);render();msg("Restored")}else msg("Invalid data")}
+
+document.addEventListener("submit",function(e){e.preventDefault();var f=new FormData(e.target),o={};f.forEach(function(v,k){o[k]=v});o.id=uid();
+ if(e.target.id=="fe"){var dd=dr(o.eid);if(dd){["name","spec","hosp","addr","ph"].forEach(function(k){dd[k]=o[k]})}openEd=""}
+ if(e.target.id=="fd"){o.sr=Math.max.apply(null,[0].concat(S.docs.map(function(d){return d.sr||0})))+1;S.docs.push(o)}
+ if(e.target.id=="fv"){o.created=ts();o.nl=[];o.st=o.st||"done";preDoc="";S.visits.push(o)}
+ save();render()});
+document.addEventListener("change",function(e){var t=e.target;
+ if(t.id=="fq"){fl.q=t.value;render()}
+ if(t.id=="fs"){fl.s=t.value;render()}
+ if(t.id=="fst"){fl.st=t.value;render()}
+ if(t.id=="tg"){S.target=Math.max(1,+t.value||2);save();render()}
+ if(t.id=="ef"||t.id=="et"){ex.f=$("#ef").value||ex.f;ex.t=$("#et").value||ex.t;render()}
+ if(t.id=="rf"&&t.files[0]){var fr=new FileReader();fr.onload=function(){try{if(confirm("Replace current data with this backup?"))restore(JSON.parse(fr.result))}catch(x){msg("Invalid file")}};fr.readAsText(t.files[0])}});
+document.addEventListener("click",function(e){var a=e.target.closest("button"),g=function(n){return a&&a.getAttribute(n)};if(!a)return;
+ if(g("data-t")){tab=g("data-t");render()}
+ else if(g("data-mic"))toggleMic(a)
+ else if(g("data-tk")){var tv=$("#tk").value.trim();if(!tv){sst("Paste token first");return}lss(TK,tv);lss(GID,null);lss(SYN,null);render();sync(true)}
+ else if(g("data-sy"))sync(true)
+ else if(g("data-sh")){var su=$("#shu").value.trim(),sk=$("#shk").value.trim();if(!su||!sk){sst("Enter URL and key");return}lss(SU,su);lss(SK,sk);lss(TK,null);lss(GID,null);lss(SYN,null);render();sync(true)}
+ else if(g("data-so")){if(confirm("Disconnect sync on this device?")){lss(TK,null);lss(GID,null);lss(SYN,null);lss(SU,null);lss(SK,null);syncMsg="";render()}}
+ else if(g("data-bi")){var n0=0,have={};S.docs.forEach(function(d){have[String(d.name).toLowerCase()]=1});$("#bi").value.split("\n").forEach(function(l){var q=l.split(/[,\t|]/),nm=(q[0]||"").trim();if(!nm||have[nm.toLowerCase()])return;have[nm.toLowerCase()]=1;S.docs.push({id:uid(),name:nm,spec:(q[1]||"").trim(),hosp:"",addr:"",ph:"",sr:Math.max.apply(null,[0].concat(S.docs.map(function(d){return d.sr||0})))+1});n0++});save(true);render();$("#bim")&&($("#bim").textContent=n0+" added")}
+ else if(a.hasAttribute("data-mo")){openMark=g("data-mo");openEd="";render()}
+ else if(a.hasAttribute("data-ed")){openEd=g("data-ed");openMark="";render()}
+ else if(g("data-mk")){var dt=$("#mkd").value||today();S.visits.push({id:uid(),doc:openMark,date:dt,topic:$("#mkt").value,out:"Neutral",notes:"",created:ts(),nl:[],st:g("data-mk")=="done"?"done":"planned"});openMark="";save();render()}
+ else if(g("data-cmp")){S.visits.forEach(function(v){if(v.id==g("data-cmp")){v.planned=v.date;v.date=today();v.st="done"}});save();render()}
+ else if(g("data-go")){var gd=dr(g("data-go"));fl={s:"",q:gd?gd.name:"",st:""};openMark=g("data-go");openEd="";tab="docs";render()}
+ else if(g("data-done")){S.visits.forEach(function(v){if(v.id==g("data-done"))v.fu=""});save();render()}
+ else if(g("data-visit")){preDoc=g("data-visit");tab="log";render()}
+ else if(a.hasAttribute("data-an")){openNote=g("data-an");render()}
+ else if(g("data-sn")){var x=$("#nt").value.trim();if(x){S.visits.forEach(function(v){if(v.id==g("data-sn")){v.nl=v.nl||[];v.nl.push({t:ts(),x:x})}});save()}openNote="";render()}
+ else if(g("data-deld")){if(confirm("Delete doctor and their visits?")){snap(true);S.docs=S.docs.filter(function(d){return d.id!=g("data-deld")});S.visits=S.visits.filter(function(v){return v.doc!=g("data-deld")});save();render()}}
+ else if(g("data-delv")){if(confirm("Delete this visit?")){snap(true);S.visits=S.visits.filter(function(v){return v.id!=g("data-delv")});save();render()}}
+ else if(g("data-per")){per=g("data-per");render()}
+ else if(g("data-pre")){var r=rangeFor(g("data-pre"));ex.f=r[0];ex.t=r[1];render()}
+ else if(g("data-dl"))dl(g("data-dl"))
+ else if(g("data-copy"))copy(sumText(rangeFor(per),per))
+ else if(g("data-snap")){var sn=ld(SNAP)||[];if(sn.length&&confirm("Restore latest snapshot?"))restore(sn[sn.length-1].d);else msg("No snapshot")}
+ else if(g("data-wipe")){if(confirm("Erase everything? A snapshot is kept.")){snap(true);S={docs:[],visits:[],exports:[]};save();render()}}});
+seed();render();setTimeout(function(){sync(false)},600);document.addEventListener("visibilitychange",function(){if(!document.hidden)sync(false)});
+</script>
+</body>
+</html>
