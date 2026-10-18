@@ -52,12 +52,12 @@ details summary{cursor:pointer}
 <script>
 var KEY="msl_tracker_v1",KEY2="msl_tracker_v1_copy",SNAP="msl_tracker_v1_snaps";
 var S={docs:[],visits:[],exports:[]},tab="today",openNote="",preDoc="",per="week",ex={f:"",t:""},rec=null;
-function fix(){S.docs=S.docs||[];S.visits=S.visits||[];S.exports=S.exports||[]}
+function fix(){S.docs=S.docs||[];S.visits=S.visits||[];S.exports=S.exports||[];S.del=S.del||{}}
 function ld(k){try{var r=localStorage.getItem(k);return r?JSON.parse(r):null}catch(e){return null}}
 (function(){var o=ld(KEY)||ld(KEY2);if(!o){var sn=ld(SNAP);if(sn&&sn.length)o=sn[sn.length-1].d}if(o)S=o;fix();
  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}})();
 var SEED="Manish Jain|N;A K Bhalla|N;D K Agarwal|N;Manish Malik|N;RK Sharma|N;Amit Gupta|N;KK Tripathi|N;Vipul Gupta|I;Singh A P|I;Rajeev Chawla|I;Anoop Misra|I;Hanish Gupta|I;Vikas Bhutani|I;CG Agarwal|I;Nandini Rastogi|I;Sanjay Kalra|E;S K Wangnoo|E;Sachin Mittal|E;Ambrish Mithal|E;AH Zargar|E;Rishi Shukla|E;Neeru Gera|I;Beena Bansal|I;Gagan Priya|E;Surender Kumar|E;Rajesh Rajput (verify)|E;J. Ahmed (verify)|E;Sanjay Gupta|I;Hemi Soneja|I;Meena Chhabra|I;Varesh Nagrath|I;Surya Kant Mathur|E;Ramanbir Singh|E;Vipan Talwar|E;Aloke Kumar Gupta|I;Rakesh Goyal|E;Rajiv Awasthi|I;Sushil Gupta|E;Jasjit Wazir|I;Akshata Desai|E;Ajoy Tewari|I;Deep Dutta|E;JK Sharma|I;Deepak Khandelwal|E;Saptarishi Bhattacharya|E;Shafi Kuchay|E;CM Batra|E;Susheel Shalimar|H;Shiv Sarin|H;Tarana Gupta|H;Ajay Duseja|H;Prashant Katiyar|H;VK Chopra|C;JPS Sawhney|C;Viveka Kumar|C;Ashwani Mehta|C;Aparna Jaswal|C;Samir Kubba|C;Peeyush Jain|C;S. Mittal (verify)|C";
-function seed(){if(S.seeded)return;var K={N:"Nephrology",I:"Internal Medicine",E:"Endocrinology",H:"Hepatology",C:"Cardiology"},have={};S.docs.forEach(function(d){have[String(d.name).toLowerCase()]=1});SEED.split(";").forEach(function(x,i){var q=x.split("|");if(!have[q[0].toLowerCase()])S.docs.push({id:"s"+(i+1),name:q[0],spec:K[q[1]],hosp:"",addr:"",ph:"",sr:i+1})});S.seeded=1;keepMod=true;save(true);keepMod=false}
+function seed(){if(S.seeded)return;var K={N:"Nephrology",I:"Internal Medicine",E:"Endocrinology",H:"Hepatology",C:"Cardiology"},have={};S.docs.forEach(function(d){have[String(d.name).toLowerCase()]=1});SEED.split(";").forEach(function(x,i){var q=x.split("|");if(!have[q[0].toLowerCase()])S.docs.push({id:"s"+(i+1),name:q[0],spec:K[q[1]],hosp:"",addr:"",ph:"",sr:i+1})});S.seeded=1;keepMod=true;save(true);keepMod=false;rebuildH()}
 var keepMod=false,syncing=false,syncMsg="",stT=null,TK="msl_sync_token",GID="msl_sync_gist",SYN="msl_synced";
 function lsg(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lss(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
@@ -77,13 +77,31 @@ async function pushR(){
  if(mode()=="sheet"){var r=await fetch(lsg(SU),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:lsg(SK),action:"set",data:S})});var j=await r.json();if(j.error)throw new Error(j.error);return}
  var body=JSON.stringify({description:"msl-tracker-data",public:false,files:{"msl.json":{content:JSON.stringify(S)}}}),id=lsg(GID);
  if(id)await gh("/gists/"+id,{method:"PATCH",body:body});else{var c=await gh("/gists",{method:"POST",body:body});lss(GID,c.id)}}
+var H={};
+function hsh(r){var c={};for(var k in r)if(k!="u")c[k]=r[k];return JSON.stringify(c)}
+function rebuildH(){H={};S.docs.concat(S.visits).forEach(function(r){H[r.id]=hsh(r)})}
+function stamp(){S.del=S.del||{};var now=Date.now(),seen={};S.docs.concat(S.visits).forEach(function(r){seen[r.id]=1;var j=hsh(r);if(H[r.id]!==j){r.u=now;H[r.id]=j}});for(var k in H)if(!seen[k]){S.del[k]=now;delete H[k]}}
+function sj(o){if(o===null||typeof o!="object")return JSON.stringify(o);if(Array.isArray(o))return "["+o.map(sj).join(",")+"]";return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+sj(o[k])}).join(",")+"}"}
+function norm(x){var by=function(a){return(a||[]).slice().sort(function(p,q){return p.id<q.id?-1:1})};return sj({d:by(x.docs),v:by(x.visits),x:x.del||{},e:x.exports||[],t:x.target||0})}
+function mergeS(a,b){var del={};[a.del,b.del].forEach(function(o){for(var k in(o||{}))del[k]=Math.max(del[k]||0,o[k])});
+ function mg(la,lb){var m={};(la||[]).concat(lb||[]).forEach(function(r){var o=m[r.id];if(!o){m[r.id]=JSON.parse(JSON.stringify(r));return}
+  var rw=(r.u||0)>(o.u||0)||((r.u||0)==(o.u||0)&&sj(r)>sj(o)),w=rw?r:o,l=rw?o:r,c=JSON.parse(JSON.stringify(w));
+  if(w.nl||l.nl){var seen={},nl=[];(w.nl||[]).concat(l.nl||[]).forEach(function(n){var k=n.t+"|"+n.x;if(!seen[k]){seen[k]=1;nl.push(n)}});nl.sort(function(p,q){return p.t<q.t?-1:p.t>q.t?1:0});c.nl=nl}
+  m[r.id]=c});
+  return Object.keys(m).map(function(k){return m[k]}).filter(function(r){return !(del[r.id]!==undefined&&del[r.id]>=(r.u||0))})}
+ var docs=mg(a.docs,b.docs),visits=mg(a.visits,b.visits),byN={},rm={};
+ docs.sort(function(p,q){return p.id<q.id?-1:1}).forEach(function(d){var k=String(d.name).trim().toLowerCase(),o=byN[k];if(!o){byN[k]=d;return}var keep=((d.u||0)>(o.u||0))?d:o,drop=keep===d?o:d;["spec","hosp","addr","ph","sr"].forEach(function(f){if(!keep[f]&&drop[f])keep[f]=drop[f]});byN[k]=keep;rm[drop.id]=keep.id});
+ docs=Object.keys(byN).map(function(k){return byN[k]});
+ visits.forEach(function(v){while(rm[v.doc])v.doc=rm[v.doc]});
+ var es={},ex=[];(a.exports||[]).concat(b.exports||[]).forEach(function(e){var k=sj(e);if(!es[k]){es[k]=1;ex.push(e)}});ex.sort(function(p,q){return p.d<q.d?-1:p.d>q.d?1:0});
+ return{docs:docs,visits:visits,exports:ex,del:del,target:(a.mod||0)>=(b.mod||0)?a.target:b.target,seeded:a.seeded||b.seeded,mod:Math.max(a.mod||0,b.mod||0)}}
 async function sync(manual){if(!mode()||syncing)return;syncing=true;sst("Syncing…");
- try{var remote=await pullR(),first=!lsg(SYN),rm=remote?(remote.mod||0):-1,lm=S.mod||0,useCloud=false;
-  if(remote&&first)useCloud=!S.visits.length||confirm("Saved cloud data found. OK = replace this device with cloud data. Cancel = overwrite cloud with this device's data.");
-  var pull=!!remote&&(first?useCloud:rm>lm),push=!pull&&(!remote||lm>rm||(first&&!useCloud)),tm=new Date().toLocaleTimeString();
-  if(pull){snap(true);S=remote;fix();keepMod=true;save();keepMod=false;render();sst("Pulled latest at "+tm)}
-  else if(push){await pushR();sst("Saved to cloud at "+tm)}
-  else sst("Up to date ("+tm+")");
+ try{var remote=await pullR(),tm=new Date().toLocaleTimeString();
+  if(!remote){await pushR();sst("Saved to cloud at "+tm)}
+  else{var m=mergeS(S,remote),ch=norm(m)!==norm(S),pu=norm(m)!==norm(remote);
+   if(ch){snap(true);S=m;fix();keepMod=true;rebuildH();save();keepMod=false;var ae=document.activeElement;if(!ae||!/INPUT|TEXTAREA|SELECT/.test(ae.tagName))render()}
+   if(pu)await pushR();
+   sst((ch||pu)?"Synced and merged at "+tm:"Up to date ("+tm+")")}
   lss(SYN,"1")}
  catch(e){sst("Sync failed: "+(e.message||e))}
  syncing=false}
@@ -91,7 +109,7 @@ function syncCard(){var m=mode();
  if(m)return '<div class="card"><b>Cloud sync</b><div class="mu">Connected via '+(m=="sheet"?"Google Sheet":"GitHub Gist")+'. Syncs when you open the app and after each change.</div><div class="acts"><button class="p" data-sy="1">Sync now</button><button class="d" data-so="1">Disconnect</button></div><span class="mu" id="sst">'+esc(syncMsg)+'</span></div>';
  return '<div class="card"><b>Cloud sync (all devices)</b><details open><summary>Option A: Google Sheet</summary><p class="mu">Deploy the Code.gs script from your Google Sheet, then paste its Web app URL and your key. Use the same on every device.</p><input id="shu" placeholder="https://script.google.com/macros/s/.../exec"><input id="shk" type="password" placeholder="Your secret key" style="margin-top:6px"><div class="acts"><button class="p" data-sh="1">Connect Sheet</button></div></details><details><summary>Option B: GitHub Gist</summary><p class="mu">Classic token with only the gist scope.</p><input type="password" id="tk" placeholder="ghp_..."><div class="acts"><button class="p" data-tk="1">Connect Gist</button></div></details><span class="mu" id="sst"></span><p class="mu">Keep patient data out. The key/token stays in this browser only.</p></div>'}
 function snap(force){try{var sn=ld(SNAP)||[],l=sn[sn.length-1];if(force||!l||Date.now()-l.t>600000){sn.push({t:Date.now(),d:S});sn=sn.slice(-5);localStorage.setItem(SNAP,JSON.stringify(sn))}}catch(e){}}
-function save(force){try{if(!keepMod)S.mod=Date.now();var j=JSON.stringify(S);localStorage.setItem(KEY,j);localStorage.setItem(KEY2,j)}catch(e){}snap(force);if(!keepMod)sched()}
+function save(force){try{if(!keepMod){S.mod=Date.now();stamp()}var j=JSON.stringify(S);localStorage.setItem(KEY,j);localStorage.setItem(KEY2,j)}catch(e){}snap(force);if(!keepMod)sched()}
 function $(s){return document.querySelector(s)}
 function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -196,7 +214,7 @@ async function dl(kind){var r=[ex.f,ex.t],name,data,n=inR(r).length;
  var d=null;try{if(typeof claude!="undefined")d=await claude.use("downloads")}catch(e){}
  try{if(d){await d.save({filename:name,data:data})}else{var bl=new Blob([data],{type:"text/plain;charset=utf-8"}),u=URL.createObjectURL(bl),an=document.createElement("a");an.href=u;an.download=name;document.body.appendChild(an);an.click();an.remove();setTimeout(function(){URL.revokeObjectURL(u)},1500)}S.exports.push({d:today(),k:kind,f:r[0],t:r[1],n:n});save(true);render();msg("Saved")}catch(e){msg(e&&e.code=="declined"?"Cancelled":"Save failed")}}
 function copy(t){try{navigator.clipboard.writeText(t).then(function(){msg("Copied")},function(){msg("Copy blocked")})}catch(e){msg("Copy blocked")}}
-function restore(o){if(o&&o.docs&&o.visits){snap(true);S=o;fix();save(true);render();msg("Restored")}else msg("Invalid data")}
+function restore(o){if(o&&o.docs&&o.visits){snap(true);S=o;fix();H={};save(true);render();msg("Restored")}else msg("Invalid data")}
 
 document.addEventListener("submit",function(e){e.preventDefault();var f=new FormData(e.target),o={};f.forEach(function(v,k){o[k]=v});o.id=uid();
  if(e.target.id=="fe"){var dd=dr(o.eid);if(dd){["name","spec","hosp","addr","ph"].forEach(function(k){dd[k]=o[k]})}openEd=""}
@@ -235,7 +253,7 @@ document.addEventListener("click",function(e){var a=e.target.closest("button"),g
  else if(g("data-copy"))copy(sumText(rangeFor(per),per))
  else if(g("data-snap")){var sn=ld(SNAP)||[];if(sn.length&&confirm("Restore latest snapshot?"))restore(sn[sn.length-1].d);else msg("No snapshot")}
  else if(g("data-wipe")){if(confirm("Erase everything? A snapshot is kept.")){snap(true);S={docs:[],visits:[],exports:[]};save();render()}}});
-seed();render();setTimeout(function(){sync(false)},600);document.addEventListener("visibilitychange",function(){if(!document.hidden)sync(false)});
+rebuildH();seed();render();setTimeout(function(){sync(false)},600);document.addEventListener("visibilitychange",function(){if(!document.hidden)sync(false)});
 </script>
 </body>
 </html>
