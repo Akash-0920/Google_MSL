@@ -148,7 +148,7 @@ function toggleMic(btn){var ta=document.getElementById(btn.getAttribute("data-mi
  rec.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal){ta.value+=(ta.value&&!/\s$/.test(ta.value)?" ":"")+e.results[i][0].transcript.trim()}};
  rec.onerror=function(e){mm.textContent=(e.error=="not-allowed"||e.error=="service-not-allowed")?"Mic blocked. Allow microphone in browser settings, or use keyboard mic.":"Voice error: "+e.error};
  rec.onend=function(){audStop();rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice";if(mm.textContent=="Listening…")mm.textContent=""};
- if(ta.id=="nn")audStart();
+ if(ta.id=="nn"||ta.id=="nt")audStart();
  try{rec.start()}catch(x){rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice"}}
 
 function isDone(v){return v.st!="planned"}
@@ -160,7 +160,7 @@ function covBox(){var t=tgt(),n=S.docs.length;if(!n)return "";var m=0,p=0,z=0,v=
  return '<div class="card"><div class="row"><b>This quarter</b><span class="mu">'+qLeft()+' days left</span></div><div class="bar"><i style="width:'+Math.round(v/need*100)+'%"></i></div><div class="mu">'+m+' of '+n+' doctors at '+t+'/'+t+' · '+p+' started · '+z+' not visited · '+(need-v)+' visits remaining</div></div>'}
 function planHtml(){var pl=S.visits.filter(function(v){return !isDone(v)}).sort(function(a,b){return a.date<b.date?-1:1});return pl.map(vCard).join("")||'<p class="mu">No planned meetings.</p>'}
 function covCsv(r){var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};return "\ufeff"+["No,Doctor,Speciality,Hospital,Completed visits,Target,Target met"].concat(S.docs.slice().sort(function(a,b){return (a.sr||999)-(b.sr||999)}).map(function(d){var c=S.visits.filter(function(v){return v.doc==d.id&&isDone(v)&&v.date>=r[0]&&v.date<=r[1]}).length;return[d.sr,d.name,d.spec,d.hosp,c,tgt(),c>=tgt()?"Yes":"No"].map(q).join(",")})).join("\r\n")}
-function vCard(v){var nl=(v.nl||[]).map(function(n){return '<div class="note"><span class="mu">'+esc(n.t)+'</span> '+esc(n.x)+'</div>'}).join("");
+function vCard(v){var nl=(v.nl||[]).map(function(n){return '<div class="note"><span class="mu">'+esc(n.t)+'</span> '+esc(n.x)+(n.aud||[]).map(function(a,i){return '<div class="acts"><button data-pa="'+a+'">▶ Play recording '+(i+1)+'</button></div><div id="p'+a+'"></div>'}).join("")+'</div>'}).join("");
  return '<div class="card"><div class="row"><b>'+esc(dn(v.doc))+'</b><span class="mu">'+(isDone(v)?"":"📅 Planned · ")+esc(v.date)+'</span></div><div>'+esc(v.topic)+' <span class="mu">· '+esc(v.out)+(v.created?' · logged '+esc(v.created):"")+'</span></div>'+(v.notes?'<div class="note">'+esc(v.notes)+'</div>':"")+nl+(v.aud||[]).map(function(a,i){return '<div class="acts"><button data-pa="'+a+'">▶ Play recording '+(i+1)+'</button></div><div id="p'+a+'"></div>'}).join("")+
  (openNote==v.id?'<textarea id="nt" rows="3" placeholder="Post-meeting note (no patient data)"></textarea>'+micHtml("nt")+'<div class="acts"><button class="p" data-sn="'+v.id+'">Save note</button><button data-an="">Cancel</button></div>':'<div class="acts">'+(isDone(v)?"":'<button class="p" data-cmp="'+v.id+'">Mark complete</button>')+'<button data-an="'+v.id+'">+ Add note</button><button class="d" data-delv="'+v.id+'">Delete</button></div>')+'</div>'}
 
@@ -252,8 +252,8 @@ document.addEventListener("click",function(e){var a=e.target.closest("button"),g
  else if(g("data-go")){var gd=dr(g("data-go"));fl={s:"",q:gd?gd.name:"",st:""};openMark=g("data-go");openEd="";tab="docs";render()}
  else if(g("data-done")){S.visits.forEach(function(v){if(v.id==g("data-done"))v.fu=""});save();render()}
  else if(g("data-visit")){preDoc=g("data-visit");tab="log";render()}
- else if(a.hasAttribute("data-an")){openNote=g("data-an");render()}
- else if(g("data-sn")){var x=$("#nt").value.trim();if(x){S.visits.forEach(function(v){if(v.id==g("data-sn")){v.nl=v.nl||[];v.nl.push({t:ts(),x:x})}});save()}openNote="";render()}
+ else if(a.hasAttribute("data-an")){pendAud=[];openNote=g("data-an");render()}
+ else if(g("data-sn")){var x=$("#nt").value.trim();if(x||pendAud.length){var au=pendAud;pendAud=[];S.visits.forEach(function(v){if(v.id==g("data-sn")){v.nl=v.nl||[];v.nl.push({t:ts(),x:x,aud:au})}});save()}openNote="";render()}
  else if(g("data-deld")){if(confirm("Delete doctor and their visits?")){snap(true);S.docs=S.docs.filter(function(d){return d.id!=g("data-deld")});S.visits=S.visits.filter(function(v){return v.doc!=g("data-deld")});save();render()}}
  else if(g("data-delv")){if(confirm("Delete this visit?")){snap(true);S.visits=S.visits.filter(function(v){return v.id!=g("data-delv")});save();render()}}
  else if(g("data-per")){per=g("data-per");render()}
