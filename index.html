@@ -52,6 +52,12 @@ details summary{cursor:pointer}
 <script>
 var KEY="msl_tracker_v1",KEY2="msl_tracker_v1_copy",SNAP="msl_tracker_v1_snaps";
 var S={docs:[],visits:[],exports:[]},tab="today",openNote="",preDoc="",per="week",ex={f:"",t:""},rec=null;
+var pendAud=[],mr=null;
+async function upAud(bl){if(mode()!="sheet")throw new Error("Connect Google Sheet first");var d=await new Promise(function(ok){var r=new FileReader();r.onload=function(){ok(r.result.split(",")[1])};r.readAsDataURL(bl)});var r=await fetch(lsg(SU),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:lsg(SK),action:"putAudio",name:"msl-"+Date.now()+".webm",mime:bl.type,data:d})});var j=await r.json();if(j.error)throw new Error(j.error);return j.id}
+async function audStart(){try{var s=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[],m=new MediaRecorder(s);mr=m;m.ondataavailable=function(e){if(e.data.size)ch.push(e.data)};m.onstop=function(){s.getTracks().forEach(function(t){t.stop()});var x=document.querySelector(".mm");if(x)x.textContent="Uploading audio…";upAud(new Blob(ch,{type:m.mimeType||"audio/webm"})).then(function(id){pendAud.push(id);if(x)x.textContent="Audio saved to cloud ("+pendAud.length+")"}).catch(function(e){if(x)x.textContent="Audio upload failed: "+e.message})};m.start()}catch(x){mr=null}}
+function audStop(){if(mr&&mr.state!="inactive")mr.stop();mr=null}
+async function playAud(id,box){box.innerHTML='<span class="mu">Loading…</span>';try{var r=await fetch(lsg(SU)+(lsg(SU).indexOf("?")<0?"?":"&")+"key="+encodeURIComponent(lsg(SK))+"&action=getAudio&id="+encodeURIComponent(id));var j=await r.json();if(j.error)throw new Error(j.error);box.innerHTML='<audio controls autoplay src="data:'+j.mime+';base64,'+j.data+'"></audio>'}catch(e){box.innerHTML='<span class="mu">'+esc(e.message)+'</span>'}}
+function dopts(q,sel){q=(q||"").toLowerCase();var L=S.docs.filter(function(d){return(d.name+" "+(d.hosp||"")+" "+(d.spec||"")).toLowerCase().indexOf(q)>=0});return L.length?L.map(function(d){return '<option value="'+d.id+'"'+(d.id==sel?" selected":"")+'>'+esc(d.name)+(d.spec?" · "+esc(d.spec):"")+'</option>'}).join(""):'<option value="">No match</option>'}
 function fix(){S.docs=S.docs||[];S.visits=S.visits||[];S.exports=S.exports||[];S.del=S.del||{}}
 function ld(k){try{var r=localStorage.getItem(k);return r?JSON.parse(r):null}catch(e){return null}}
 (function(){var o=ld(KEY)||ld(KEY2);if(!o){var sn=ld(SNAP);if(sn&&sn.length)o=sn[sn.length-1].d}if(o)S=o;fix();
@@ -141,7 +147,8 @@ function toggleMic(btn){var ta=document.getElementById(btn.getAttribute("data-mi
  btn.classList.add("on");btn.textContent="⏹ Stop";mm.textContent="Listening…";
  rec.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal){ta.value+=(ta.value&&!/\s$/.test(ta.value)?" ":"")+e.results[i][0].transcript.trim()}};
  rec.onerror=function(e){mm.textContent=(e.error=="not-allowed"||e.error=="service-not-allowed")?"Mic blocked. Allow microphone in browser settings, or use keyboard mic.":"Voice error: "+e.error};
- rec.onend=function(){rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice";if(mm.textContent=="Listening…")mm.textContent=""};
+ rec.onend=function(){audStop();rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice";if(mm.textContent=="Listening…")mm.textContent=""};
+ if(ta.id=="nn")audStart();
  try{rec.start()}catch(x){rec=null;btn.classList.remove("on");btn.textContent="🎤 Voice"}}
 
 function isDone(v){return v.st!="planned"}
@@ -154,7 +161,7 @@ function covBox(){var t=tgt(),n=S.docs.length;if(!n)return "";var m=0,p=0,z=0,v=
 function planHtml(){var pl=S.visits.filter(function(v){return !isDone(v)}).sort(function(a,b){return a.date<b.date?-1:1});return pl.map(vCard).join("")||'<p class="mu">No planned meetings.</p>'}
 function covCsv(r){var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};return "\ufeff"+["No,Doctor,Speciality,Hospital,Completed visits,Target,Target met"].concat(S.docs.slice().sort(function(a,b){return (a.sr||999)-(b.sr||999)}).map(function(d){var c=S.visits.filter(function(v){return v.doc==d.id&&isDone(v)&&v.date>=r[0]&&v.date<=r[1]}).length;return[d.sr,d.name,d.spec,d.hosp,c,tgt(),c>=tgt()?"Yes":"No"].map(q).join(",")})).join("\r\n")}
 function vCard(v){var nl=(v.nl||[]).map(function(n){return '<div class="note"><span class="mu">'+esc(n.t)+'</span> '+esc(n.x)+'</div>'}).join("");
- return '<div class="card"><div class="row"><b>'+esc(dn(v.doc))+'</b><span class="mu">'+(isDone(v)?"":"📅 Planned · ")+esc(v.date)+'</span></div><div>'+esc(v.topic)+' <span class="mu">· '+esc(v.out)+(v.created?' · logged '+esc(v.created):"")+'</span></div>'+(v.notes?'<div class="note">'+esc(v.notes)+'</div>':"")+nl+
+ return '<div class="card"><div class="row"><b>'+esc(dn(v.doc))+'</b><span class="mu">'+(isDone(v)?"":"📅 Planned · ")+esc(v.date)+'</span></div><div>'+esc(v.topic)+' <span class="mu">· '+esc(v.out)+(v.created?' · logged '+esc(v.created):"")+'</span></div>'+(v.notes?'<div class="note">'+esc(v.notes)+'</div>':"")+nl+(v.aud||[]).map(function(a,i){return '<div class="acts"><button data-pa="'+a+'">▶ Play recording '+(i+1)+'</button></div><div id="p'+a+'"></div>'}).join("")+
  (openNote==v.id?'<textarea id="nt" rows="3" placeholder="Post-meeting note (no patient data)"></textarea>'+micHtml("nt")+'<div class="acts"><button class="p" data-sn="'+v.id+'">Save note</button><button data-an="">Cancel</button></div>':'<div class="acts">'+(isDone(v)?"":'<button class="p" data-cmp="'+v.id+'">Mark complete</button>')+'<button data-an="'+v.id+'">+ Add note</button><button class="d" data-delv="'+v.id+'">Delete</button></div>')+'</div>'}
 
 function lastEx(){return S.exports.length?S.exports[S.exports.length-1].d:""}
@@ -183,7 +190,7 @@ function vCov(){var t=tgt(),r=rangeFor("quarter"),by={};S.docs.forEach(function(
  return covBox()+'<div class="card"><label>Target visits per doctor per quarter</label><input type="number" id="tg" min="1" max="12" value="'+t+'" style="width:90px"><p class="mu">Quarter starts '+r[0]+'. Only completed visits count.</p></div><div class="card"><b>By speciality</b><div class="sc"><table><tr><th>Speciality</th><th>Target met</th><th>Visits left</th></tr>'+rows+'</table></div></div><h3>Still to cover ('+pend.length+')</h3>'+(pend.map(function(d){return '<div class="card"><div class="row"><b>'+esc(d.name)+'</b>'+badge(d.id)+'</div><div class="mu">'+esc(d.spec||"")+'</div><div class="acts"><button class="p" data-go="'+d.id+'">Mark / plan visit</button></div></div>'}).join("")||'<p class="mu">All doctors covered 🎉</p>')}
 
 function vLog(){if(!S.docs.length)return '<p class="mu">Add a doctor first.</p>';
- return '<form class="card" id="fv"><div><label>Date</label><input type="date" name="date" value="'+today()+'" required></div><div><label>Doctor</label><select name="doc">'+S.docs.map(function(d){return '<option value="'+d.id+'"'+(d.id==preDoc?" selected":"")+'>'+esc(d.name)+'</option>'}).join("")+'</select></div><div><label>Topic</label><input name="topic" placeholder="e.g. new data, MoA"></div><div><label>Status</label><select name="st"><option value="done">Completed</option><option value="planned">Planned</option></select></div><div><label>Outcome</label><select name="out"><option>Positive</option><option>Neutral</option><option>Needs follow-up</option><option>Not met</option></select></div><div class="w"><label>Notes (no patient data)</label><textarea id="nn" name="notes" rows="3"></textarea>'+micHtml("nn")+'</div><div><label>Follow-up date</label><input type="date" name="fu"></div><div style="align-self:end"><button class="p" style="width:100%">Save visit</button></div></form>'+
+ return '<form class="card" id="fv"><div><label>Date</label><input type="date" name="date" value="'+today()+'" required></div><div><label>Doctor</label><input id="dq" placeholder="Search doctor / hospital…" autocomplete="off"><select name="doc" id="ds" required>'+dopts("",preDoc)+'</select><button type="button" data-ad="1" style="margin-top:4px">+ Add doctor</button></div><div><label>Topic</label><input name="topic" placeholder="e.g. new data, MoA"></div><div><label>Status</label><select name="st"><option value="done">Completed</option><option value="planned">Planned</option></select></div><div><label>Outcome</label><select name="out"><option>Positive</option><option>Neutral</option><option>Needs follow-up</option><option>Not met</option></select></div><div class="w"><label>Notes (no patient data)</label><textarea id="nn" name="notes" rows="3"></textarea>'+micHtml("nn")+'</div><div><label>Follow-up date</label><input type="date" name="fu"></div><div style="align-self:end"><button class="p" style="width:100%">Save visit</button></div></form>'+
  S.visits.slice().sort(function(a,b){return (a.date+(a.created||""))<(b.date+(b.created||""))?1:-1}).slice(0,40).map(vCard).join("")}
 
 function inR(r){return S.visits.filter(function(v){return isDone(v)&&v.date>=r[0]&&v.date<=r[1]})}
@@ -219,7 +226,7 @@ function restore(o){if(o&&o.docs&&o.visits){snap(true);S=o;fix();H={};save(true)
 document.addEventListener("submit",function(e){e.preventDefault();var f=new FormData(e.target),o={};f.forEach(function(v,k){o[k]=v});o.id=uid();
  if(e.target.id=="fe"){var dd=dr(o.eid);if(dd){["name","spec","hosp","addr","ph"].forEach(function(k){dd[k]=o[k]})}openEd=""}
  if(e.target.id=="fd"){o.sr=Math.max.apply(null,[0].concat(S.docs.map(function(d){return d.sr||0})))+1;S.docs.push(o)}
- if(e.target.id=="fv"){o.created=ts();o.nl=[];o.st=o.st||"done";preDoc="";S.visits.push(o)}
+ if(e.target.id=="fv"){o.aud=pendAud;pendAud=[];o.created=ts();o.nl=[];o.st=o.st||"done";preDoc="";S.visits.push(o)}
  save();render()});
 document.addEventListener("change",function(e){var t=e.target;
  if(t.id=="fq"){fl.q=t.value;render()}
@@ -231,6 +238,8 @@ document.addEventListener("change",function(e){var t=e.target;
 document.addEventListener("click",function(e){var a=e.target.closest("button"),g=function(n){return a&&a.getAttribute(n)};if(!a)return;
  if(g("data-t")){tab=g("data-t");render()}
  else if(g("data-mic"))toggleMic(a)
+ else if(g("data-pa"))playAud(g("data-pa"),document.getElementById("p"+g("data-pa")))
+ else if(g("data-ad")){var nm=prompt("Doctor name");if(nm&&nm.trim()){var nd={id:uid(),name:nm.trim(),spec:(prompt("Speciality (optional)")||"").trim(),hosp:"",addr:"",ph:"",sr:Math.max.apply(null,[0].concat(S.docs.map(function(d){return d.sr||0})))+1};S.docs.push(nd);save();$("#dq").value="";$("#ds").innerHTML=dopts("",nd.id)}}
  else if(g("data-tk")){var tv=$("#tk").value.trim();if(!tv){sst("Paste token first");return}lss(TK,tv);lss(GID,null);lss(SYN,null);render();sync(true)}
  else if(g("data-sy"))sync(true)
  else if(g("data-sh")){var su=$("#shu").value.trim(),sk=$("#shk").value.trim();if(!su||!sk){sst("Enter URL and key");return}lss(SU,su);lss(SK,sk);lss(TK,null);lss(GID,null);lss(SYN,null);render();sync(true)}
@@ -253,6 +262,7 @@ document.addEventListener("click",function(e){var a=e.target.closest("button"),g
  else if(g("data-copy"))copy(sumText(rangeFor(per),per))
  else if(g("data-snap")){var sn=ld(SNAP)||[];if(sn.length&&confirm("Restore latest snapshot?"))restore(sn[sn.length-1].d);else msg("No snapshot")}
  else if(g("data-wipe")){if(confirm("Erase everything? A snapshot is kept.")){snap(true);S={docs:[],visits:[],exports:[]};save();render()}}});
+document.addEventListener("input",function(e){if(e.target.id=="dq")$("#ds").innerHTML=dopts(e.target.value,"")});
 rebuildH();seed();render();setTimeout(function(){sync(false)},600);document.addEventListener("visibilitychange",function(){if(!document.hidden)sync(false)});
 </script>
 </body>
